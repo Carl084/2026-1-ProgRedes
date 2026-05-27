@@ -1,9 +1,9 @@
 import socket
-from config import *
+from introducao_socket.echo_config import *
 
 my_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-server_ip = input("IP/nome do servidor: ")
+#SERVER_IP = input("IP/nome do servidor: ")
 
 while True:
     msg = input("Mensagem: ")
@@ -13,7 +13,7 @@ while True:
     
     print(f"Enviando: {msg}")
     
-    my_sock.sendto(msg.encode(), (server_ip, PORT))
+    my_sock.sendto(msg.encode(), (SERVER_IP, SERVER_PORT))
     
     answer, source = my_sock.recvfrom(512)
     
