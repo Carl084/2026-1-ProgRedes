@@ -1,30 +1,56 @@
-import socket
-import threading
-from echo_config import *
+import socket, os
 
-my_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-SERVER_IP = input("IP/nome do servidor: ")
+HOST_IP = input("IP/nome do servidor: ")
+PORT = input("Número da porta: ")
 
-def receber(): # Esperando mensagem
-    while True:
-        try:
-            msg, source = my_sock.recvfrom(512)
-            print(f"\n{source}: {msg.decode()}")
-        except:
-            break
+sock.connect((HOST_IP, PORT))
 
-threading.Thread(target=receber, daemon=True).start()
-
-my_sock.sendto("ENTROU".encode(), (SERVER_IP, SERVER_PORT))
-
-while True:
+def env_msg():
     msg = input("Mensagem: ")
     
     if not msg:
-        break
+        return
+    
+    dados = f"MSG|{msg}"
     
     print(f"Enviando: {msg}")
-    my_sock.sendto(msg.encode(), (SERVER_IP, SERVER_PORT)) # Mensagem enviada
+    sock.send(msg.encode()) # Mensagem enviada
     
-my_sock.close()
+def env_arq():
+    file = input("caminho do arquivo: ")
+    name = os.path.basename(file)
+    size = os.path.getsize(file)
+    
+    cabecalho = f"FILE|{name}|{size}"
+    sock.send(cabecalho.encode())
+    
+    sock.recv(1024)
+    
+    with open(file, "rb") as f:
+        while True:
+            dados = f.read(4096)
+            
+            if not dados:
+                break
+            
+            sock.sendall(dados)
+    
+    print("Arquivo enviado")
+    
+
+def hub():
+    while True:
+        print("Opções")
+        print("MSG: Enviar Mensagens")
+        print("FILE: Enviar Arquivo")
+        op = input("Sua escolha: ")
+        
+        if op == "MSG":
+            env_msg()
+        elif op == "FILE":
+            env_arq()
+
+
+sock.close()

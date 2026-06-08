@@ -1,5 +1,4 @@
-import socket
-from echo_config import *
+import socket, threading
 
 def get_my_ip10():
     # Andar sobre os endereços da maquina
@@ -7,27 +6,82 @@ def get_my_ip10():
         ip = addr[4][0] # Extrair o IP
         
         if ip.startswith("10."): # verificar se começa com 10
-            return ip # Retorna ele
+            return f"{ip}" # Retorna ele
     
     return None # Caso não tenha 10
 
-my_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-my_ip = get_my_ip10()
+HOST_IP = get_my_ip10
+print(f"O IP:{HOST_IP}")
+PORT = input("Número da porta: ")
 
-print(f"Server iniciado em {my_ip}:{SERVER_PORT}")
-my_sock.bind((my_ip, SERVER_PORT))
+clients = []
+
+def broadcast(msg, remate=None):
+    for client in clients:
+        if client != remate:
+            try:
+                client.send(msg)
+            except:
+                client.remove(client)
+                client.close()
+
+def acp_client(client, address):
+    print(f"[NOVA CONEXÃO] {address}")
+    
+    while True:
+        try:
+            dados = client.recv(1024)
+            
+            if not dados:
+                break
+            
+            msg = dados.decode()
+            print(f"{address}: {dados.decode()}")
+            
+            broadcast(
+                f"{address}: {msg}".encode(),
+                client
+            )
+            
+        except:
+            break
+        
+        print(f"[DESCONECTADO] {address}")
+        
+        clients.remove(client)
+        client.close()
+
+server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+server.bind((HOST_IP, PORT))
+server.listen()
+
+print(f"Server Iniciado!")
 
 while True:
-    msg, source = my_sock.recvfrom(512)
-    print(f"Recebido de {source}: {msg.decode()}")
     
-    clients.add(source) # Adicionar client a lista
-    print(f"Clientes conectados: {clients}")
+    client, address = server.accept()
+
+    thread = threading.Thread(
+        target=acp_client,
+        args=(client, address)
+    )
     
-    # Enviar mensagem para todos menos para a origem
-    for client in clients:
-        if client != source: # se não for a origem, enviar mensagem
-            print(f"Enviando para {client}")
-            my_sock.sendto(msg, client)
-            
-my_sock.close()
+    thread.start()
+    
+    print(f"Clientes ativos: {threading.active_count() - 1}")
+
+cabecalho = client.recv(1024).decode()
+partes = cabecalho.split("|")
+tipo = partes[0]
+
+if tipo == "MSG":
+    msg = partes[1]
+    print(f"Mensagem recebida: {msg}")
+
+elif tipo == "FILE":
+    name_arq = partes[1]
+    size = int(partes[2])
+    
+    print(f"Recebendo arquivo {name_arq}")
+
+server.close()
