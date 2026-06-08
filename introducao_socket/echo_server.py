@@ -16,6 +16,10 @@ PORT = input("Número da porta: ")
 
 clients = []
 
+def trat_pacote():
+    
+    return
+
 def broadcast(msg, remate=None):
     for client in clients:
         if client != remate:
@@ -30,7 +34,15 @@ def acp_client(client, address):
     
     while True:
         try:
-            dados = client.recv(1024)
+            cabecalho = client.recv(1024).decode()
+            
+            partes = cabecalho.split("|")
+            
+            if tipo == "MSG":
+                trat_pacote()
+                
+            elif tipo == "FILE":
+                
             
             if not dados:
                 break
