@@ -1,99 +1,122 @@
 import socket, threading
 
-def get_my_ip10():
-    # Andar sobre os endereços da maquina
-    for addr in socket.getaddrinfo(socket.gethostname(), None): 
-        ip = addr[4][0] # Extrair o IP
+''' 
+    def get_my_ip10():
+        # Andar sobre os endereços da maquina
+        for addr in socket.getaddrinfo(socket.gethostname(), None): 
+            ip = addr[4][0] # Extrair o IP
         
-        if ip.startswith("10."): # verificar se começa com 10
-            return f"{ip}" # Retorna ele
+            if ip.startswith("10."): # verificar se começa com 10
+                return f"{ip}" # Retorna ele
     
-    return None # Caso não tenha 10
+        return None # Caso não tenha 10
+'''
 
-HOST_IP = get_my_ip10
-print(f"O IP:{HOST_IP}")
-PORT = input("Número da porta: ")
+HOST = "0.0.0.0"
+PORT = 5000
 
 clients = []
 
-def trat_pacote():
-    
-    return
 
-def broadcast(msg, remate=None):
-    for client in clients:
-        if client != remate:
+def broadcast(msg, remate=None): # Definir ação broadcast.
+    for client in clients[:]:
+        if client != remate: 
             try:
                 client.send(msg)
             except:
                 client.remove(client)
                 client.close()
 
-def acp_client(client, address):
+
+def to_receive_arq(client, name_arq, size): # Recebendo o arquivo.
+    received = 0
+
+    # Ler toda a mensagem e grava-lo em um outro arquivo.
+    with open(f"recebido_{name_arq}", "wb") as arq: 
+
+        while received < size:
+
+            data = client.recv(
+                min(4096, size - received)
+            )
+
+            if not data:
+                break
+
+            arq.write(data)
+            received += len(data)
+
+    print(f"Arquivo recebido: {name_arq}")
+
+
+def to_attend_client(client, address):
+
     print(f"[NOVA CONEXÃO] {address}")
-    
+
     while True:
+
         try:
-            cabecalho = client.recv(1024).decode()
-            
-            partes = cabecalho.split("|")
-            
-            if tipo == "MSG":
-                trat_pacote()
-                
-            elif tipo == "FILE":
-                
-            
-            if not dados:
+            header = client.recv(1024)
+
+            if not header:
                 break
             
-            msg = dados.decode()
-            print(f"{address}: {dados.decode()}")
-            
-            broadcast(
-                f"{address}: {msg}".encode(),
-                client
-            )
-            
-        except:
-            break
-        
-        print(f"[DESCONECTADO] {address}")
-        
-        clients.remove(client)
-        client.close()
+            header = header.decode()
+            parts = header.split("|")
+            t_type = parts[0]
 
-server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-server.bind((HOST_IP, PORT))
+            if t_type == "MSG":
+                
+                msg = parts[1]
+                print(f"{address}: {msg}")
+
+                broadcast(
+                    f"{address}: {msg}".decode(),
+                )
+
+            if t_type == "FILE":
+
+                name_arq = parts[1]
+                size = int(parts[2])
+
+                print(
+                    f"{address} enviou um arquivo "
+                    f"{name_arq} ({size} bytes)"
+                )
+
+                client.send(b"OK")
+
+                to_receive_arq(
+                    client,
+                    name_arq,
+                    size
+                )
+
+        except Exception as erro:
+
+            print(f"Erro: {erro}")
+            break
+
+    print(f"[DESCONECTADO] {address}")
+
+    if client in clients:
+        client.remove(client)
+    
+    client.close()
+
+server = socket.socket(
+    socket.AF_INET
+    socket.SOCK_STREAM
+)
+
+server.bind((HOST, PORT))
 server.listen()
 
-print(f"Server Iniciado!")
+print(f"Servidor ouvido em {HOST}:{PORT}")
 
 while True:
-    
+
     client, address = server.accept()
+    clients.append(client)
 
-    thread = threading.Thread(
-        target=acp_client,
-        args=(client, address)
-    )
-    
-    thread.start()
-    
-    print(f"Clientes ativos: {threading.active_count() - 1}")
-
-cabecalho = client.recv(1024).decode()
-partes = cabecalho.split("|")
-tipo = partes[0]
-
-if tipo == "MSG":
-    msg = partes[1]
-    print(f"Mensagem recebida: {msg}")
-
-elif tipo == "FILE":
-    name_arq = partes[1]
-    size = int(partes[2])
-    
-    print(f"Recebendo arquivo {name_arq}")
-
-server.close()
+    thread = threading

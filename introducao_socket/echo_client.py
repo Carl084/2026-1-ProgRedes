@@ -3,7 +3,7 @@ import socket, os
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 HOST_IP = input("IP/nome do servidor: ")
-PORT = input("Número da porta: ")
+PORT = int(input("Número da porta: "))
 
 sock.connect((HOST_IP, PORT))
 
