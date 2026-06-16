@@ -48,8 +48,7 @@ print("Cabeçalho recebido:")
 print(cabecalho)
 
 # Salvando o conteúdo em arquivo
-arq = open(arquivo, "wb")
-arq.write(corpo)
-arq.close()
-
+with open(arquivo, "wb") as arq:
+    arq.write(corpo)
+    
 print("Arquivo salvo com sucesso!")
