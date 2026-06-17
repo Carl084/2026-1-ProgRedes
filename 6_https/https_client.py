@@ -8,15 +8,16 @@ if len(sys.argv) != 4:
     print(f"python {sys.argv[0]} site recurso arquivo")
     sys.exit()
 
+# Coletar as imformações do terminal
 site = sys.argv[1]
-recurso = sys.argv[2]
-arquivo = sys.argv[3]
+resoucer = sys.argv[2]
+archive = sys.argv[3]
 
 sock.connect((site, 80))
 
-# Montando a requisição HTTP
+# Requisição HTTP
 request = (
-    f"GET {recurso} HTTP/1.1\r\n"
+    f"GET {resoucer} HTTP/1.1\r\n"
     f"Host: {site}\r\n"
     "Connection: close\r\n"
     "\r\n"
@@ -24,31 +25,32 @@ request = (
 
 sock.send(request.encode())
 
-# Recebendo os dados
-dados = b""
+date = b""
 
+# Loop composto de ler os dados recebidos ate 4096 bytes e guardar em uma string
 while True:
 
-    parte = sock.recv(4096)
+    part = sock.recv(4096)
 
-    if len(parte) == 0:
+    if len(part) == 0:
         break
 
-    dados += parte
+    date += part
 
 sock.close()
 
 # Procurando o fim do cabeçalho
-posicao = dados.find(b"\r\n\r\n")
+division = date.find(b"\r\n\r\n")
 
-cabecalho = dados[:posicao].decode()
-corpo = dados[posicao + 4:]
+# Separar cabeça e corpo
+header = date[:division].decode()
+body = date[division + 4:]
 
 print("Cabeçalho recebido:")
-print(cabecalho)
+print(header)
 
-# Salvando o conteúdo em arquivo
-with open(arquivo, "wb") as arq:
-    arq.write(corpo)
+# Salvando o conteúdo em um arquivo
+with open(archive, "wb") as file:
+    file.write(body)
     
-print("Arquivo salvo com sucesso!")
+print(f"Dados do arquivo salvo em {archive} com sucesso!")
