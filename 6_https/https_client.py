@@ -1,5 +1,27 @@
+# py https_client.py viacep.com.br /ws/59062570/json/ meucep.json
 import socket
 import sys
+
+def decode_chunked(date):
+    result = b""
+    while date:
+        pos = date.find(b"\r\n") # Encontrar a primeira quebra de linha
+        if pos == -1:
+            break
+
+        size_hex = date[:pos] # Pega o Hex
+        size = int(size_hex, 16) # Converter para decimal
+
+        if size == 0:
+            break
+
+        start = pos + 2 # Onde realemte começa os dados
+        end = start + size
+
+        result += date[start:end]
+        date = date[end+2:]
+
+    return result
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -41,7 +63,6 @@ sock.close()
 
 # Procurando o fim do cabeçalho
 division = date.find(b"\r\n\r\n")
-
 # Separar cabeça e corpo
 header = date[:division].decode()
 body = date[division + 4:]
@@ -49,8 +70,9 @@ body = date[division + 4:]
 print("Cabeçalho recebido:")
 print(header)
 
+body = decode_chunked(body).decode("utf-8")
 # Salvando o conteúdo em um arquivo
-with open(archive, "wb") as file:
+with open(archive, "w", encoding="utf-8") as file:
     file.write(body)
     
 print(f"Dados do arquivo salvo em {archive} com sucesso!")
